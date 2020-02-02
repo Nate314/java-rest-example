@@ -2,7 +2,12 @@
 
 This repository includes a basic REST API built with Jersey and Spring framework and for demonstration purposes.
 
-This is a modified clone of https://github.com/cagataygurturk/java-rest-example that includes mysql database integration and auth0-JWT support
+This project started as a clone of https://github.com/cagataygurturk/java-rest-example
+I have added mysql database integration and auth0-JWT support.
+
+Other resources I used for the basics around creating a Java REST api:
+https://springframework.guru/spring-requestmapping-annotation/
+https://www.tutorialspoint.com/spring_boot/spring_boot_interceptor.htm
 
 ## Run and Test
 

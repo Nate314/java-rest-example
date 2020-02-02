@@ -1,15 +1,17 @@
 package com.nathangawith.controllers;
 
-import com.nathangawith.database.Database;
-import com.nathangawith.services.IMathService;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.stereotype.Component;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RestController;
 
-import javax.ws.rs.*;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+import com.nathangawith.database.Database;
+import com.nathangawith.services.IMathService;
 
 class MathRequest {
     public int a;
@@ -29,39 +31,47 @@ class TestDto {
 	public String col_string;
 }
 
-@Component
-@Path("/math")
+@RestController
+@RequestMapping("/math")
 public class MathController {
 
     @Autowired
     @Qualifier("math_service")
     private IMathService mathService;
 
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    @Path("add/{a}/{b}")
-    public Response getAddResult(@PathParam("a") int a, @PathParam("b") int b) throws Exception {
+
+    @RequestMapping(
+    		value = "/add/{a}/{b}",
+    		method = RequestMethod.GET
+    )
+    public ResponseEntity<MathResult> getAddResult(
+    		@PathVariable String a,
+    		@PathVariable String b)
+    throws Exception {
     	TestDto t = Database.testSelect(TestDto.class);
     	System.out.println("Hey");
     	System.out.println(t.col_string);
-        return Response.status(200).entity(
-            new MathResult(mathService.getAddition(a, b))
-        ).build();
+    	int intA = Integer.parseInt(a);
+    	int intB = Integer.parseInt(b);
+    	return new ResponseEntity<MathResult>(
+    			new MathResult(mathService.getAddition(intA, intB)),
+    			HttpStatus.OK);
     }
 
-    @POST
-    @Produces(MediaType.APPLICATION_JSON)
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Path("add")
-    public Response postAddResult(MathRequest request) throws Exception {
+    @RequestMapping(
+    		value = "/add",
+    		method = RequestMethod.POST,
+    		consumes = {"application/JSON"}
+    )
+    public ResponseEntity<MathResult> postAddResult(
+    		@RequestBody MathRequest request)
+    throws Exception {
         System.out.println("----------------");
-        System.out.println(mathService);
         System.out.println(mathService.getAddition(request.a, request.b));
         System.out.println("----------------");
         int asdf = mathService.getAddition(request.a, request.b);
-        return Response.status(200).entity(
-            new MathResult(asdf)
-        ).build();
+    	return new ResponseEntity<MathResult>(
+    			new MathResult(asdf),
+    			HttpStatus.OK);
     }
 }
-
