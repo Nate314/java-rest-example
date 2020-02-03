@@ -5,32 +5,21 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
 
-import com.nathangawith.middleware.JWTMiddleware;
+import com.nathangawith.interceptors.JWTInterceptor;
 
 @Component
-//@EnableWebMvc
-//@Configuration
-public class Config extends WebMvcConfigurerAdapter {// extends ResourceConfig { // implements WebMvcConfigurer {
+public class Config extends WebMvcConfigurerAdapter {
 	
 	@Autowired
-	JWTMiddleware jwtMiddleware;
+	JWTInterceptor jwtMiddleware;
 	
 	
 	public Config() {
 		super();
-//        register(JWTMiddleware.class);
-//        register(MathController.class);
-        
 	}
 
 	@Override
 	public void addInterceptors(InterceptorRegistry registry) {
-		System.out.println("Adding interceptor");
-		registry.addInterceptor(jwtMiddleware); // .addPathPatterns("**");
+		registry.addInterceptor(jwtMiddleware);
 	}
-	
-//    @Bean
-//    public JWTMiddleware authenticationInterceptor() {
-//        return new JWTMiddleware();
-//    }
 }

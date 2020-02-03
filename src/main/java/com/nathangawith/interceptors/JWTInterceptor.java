@@ -1,4 +1,4 @@
-package com.nathangawith.middleware;
+package com.nathangawith.interceptors;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -14,9 +14,9 @@ import com.auth0.jwt.exceptions.JWTDecodeException;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 
 @Component
-public class JWTMiddleware implements HandlerInterceptor {
+public class JWTInterceptor implements HandlerInterceptor {
 	
-	public JWTMiddleware() {
+	public JWTInterceptor() {
 		super();
 	}
 
