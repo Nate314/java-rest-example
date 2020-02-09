@@ -48,7 +48,7 @@ public class MathController {
     		@PathVariable String a,
     		@PathVariable String b)
     throws Exception {
-    	TestDto t = Database.testSelect(TestDto.class);
+    	TestDto t = new Database().testSelect(TestDto.class);
     	System.out.println("Hey");
     	System.out.println(t.col_string);
     	int intA = Integer.parseInt(a);

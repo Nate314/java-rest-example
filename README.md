@@ -1,13 +1,13 @@
 # Java REST API Example
 
-This repository includes a basic REST API built with Jersey and Spring framework and for demonstration purposes.
+This repository includes a basic REST API built with Spring framework and includes mysql database integration and auth0-JWT support.
 
-This project started as a clone of https://github.com/cagataygurturk/java-rest-example
-I have added mysql database integration and auth0-JWT support.
+I used these resources heavily to create this demo Java REST api:
+- https://github.com/cagataygurturk/java-rest-example
+- https://springframework.guru/spring-requestmapping-annotation/
+- https://www.tutorialspoint.com/spring_boot/spring_boot_interceptor.htm
 
-Other resources I used for the basics around creating a Java REST api:
-https://springframework.guru/spring-requestmapping-annotation/
-https://www.tutorialspoint.com/spring_boot/spring_boot_interceptor.htm
+
 
 ## Run and Test
 
@@ -18,7 +18,6 @@ mvn spring-boot:run
 ```
 
 To execute unit and acceptance tests
-
 ```
 mvn test
 ```
@@ -31,9 +30,25 @@ For unit tests and acceptance tests JUnit and REST Assured frameworks are used.
 
 The most common HTTP status codes are returned when there is an error.
 
-### Add a transaction
 
+### Account Controller
+No authentication required
 ```
+/auth/login/{username}/{password}
+
+returns a JWT that can be used for MathController requests
+```
+
+### Math Controller
+requires JWT authentication
+```
+/math/add [POST] {"a": a, "b": b}
+
+returns a JSON response with the addition of a and b
+{
+    "value": a + b
+}
+
 /math/add/{a}/{b} [GET]
 
 returns a JSON response with the addition of a and b

@@ -1,23 +1,39 @@
 package com.nathangawith.database;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.Statement;
+import java.util.Arrays;
+import java.util.List;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
+
 import com.google.gson.Gson;
 
+class DBConfig {
+	public String connectionURL = "jdbc:mysql://localhost:3306/testing";
+	public String dbUser = "root";
+	public String dbPass = "root";
+}
+
 public class Database {
-	
-	private static String connectionURL = "jdbc:mysql://localhost:3306/testing";
-	private static String dbUser = "root";
-	private static String dbPass = "root";
 
-    public Database() {}
+	private final DBConfig config;
 
-	public static <T extends Object> T testSelect(Class<T> type) {
+    public Database() throws Exception {
+    	List<String> jsonLines = Arrays.asList(FileIO.readFileLines("config.json"));
+    	String json = String.join("\n", jsonLines);
+    	this.config = new Gson().fromJson(json, DBConfig.class);
+    }
+
+	public <T extends Object> T testSelect(Class<T> type) {
 		T test = null;
         try {
             Class.forName("com.mysql.jdbc.Driver");
-            Connection con = DriverManager.getConnection(connectionURL, dbUser, dbPass);
+            Connection con = DriverManager.getConnection(this.config.connectionURL, this.config.dbUser, this.config.dbPass);
             Statement stmt = con.createStatement();
             ResultSet rs = stmt.executeQuery("select * from testing_table");
             JSONArray json = new JSONArray();
@@ -34,11 +50,6 @@ public class Database {
             System.out.println(json);
             System.out.println(json.get(0));
             test = new Gson().fromJson(json.get(0).toString(), type);
-//            System.out.println();
-//            for (Field f : type.getFields()) {
-//            	String str = String.format("%s: %s", f.getName(), f.get(test));
-//            	System.out.println(str);
-//            }
             con.close();
         } catch (Exception e) {
             System.out.println(e);
