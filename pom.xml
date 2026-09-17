@@ -113,6 +113,15 @@
 		    <version>2.9.2</version>
 		</dependency>
 
+		<!-- Password hashing for the users table. jBCrypt is dependency-free
+		     and has no minimum Spring/Java-version requirements beyond
+		     Java 8, unlike Spring Security Crypto. -->
+		<dependency>
+		    <groupId>org.mindrot</groupId>
+		    <artifactId>jbcrypt</artifactId>
+		    <version>0.4</version>
+		</dependency>
+
 	</dependencies>
 	
 	<build>

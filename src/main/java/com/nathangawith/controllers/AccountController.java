@@ -1,5 +1,7 @@
 package com.nathangawith.controllers;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -10,15 +12,54 @@ import org.springframework.web.bind.annotation.RestController;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTCreationException;
+import com.nathangawith.services.IUserService;
 
 class LoginRequest {
 	public String username;
 	public String password;
 }
 
+class RegisterRequest {
+	public String username;
+	public String password;
+}
+
+class ApiError {
+	public String message;
+	public ApiError(String message) {
+		this.message = message;
+	}
+}
+
 @RestController
 @RequestMapping("/auth")
 public class AccountController {
+
+    @Autowired
+    @Qualifier("user_service")
+    private IUserService userService;
+
+    @RequestMapping(
+    		value = "/register",
+    		method = RequestMethod.POST,
+    		consumes = {"application/JSON"}
+    )
+    public ResponseEntity<Object> postRegister(
+    		@RequestBody RegisterRequest request
+    	) throws Exception {
+
+    	if (request.username == null || request.username.isEmpty()
+    			|| request.password == null || request.password.isEmpty()) {
+    		return new ResponseEntity<>(new ApiError("username and password are required"), HttpStatus.BAD_REQUEST);
+    	}
+
+    	if (this.userService.existsByUsername(request.username)) {
+    		return new ResponseEntity<>(new ApiError("Username already exists"), HttpStatus.CONFLICT);
+    	}
+
+    	this.userService.register(request.username, request.password);
+    	return new ResponseEntity<>(HttpStatus.CREATED);
+    }
 
     @RequestMapping(
     		value = "/login",
@@ -30,6 +71,11 @@ public class AccountController {
     	) throws Exception {
 
     	String username = request.username;
+
+    	if (username == null || request.password == null
+    			|| !this.userService.validateCredentials(username, request.password)) {
+    		return new ResponseEntity<>(new ApiError("Invalid username or password"), HttpStatus.UNAUTHORIZED);
+    	}
 
     	try {
     		int issued_at = (int) (System.currentTimeMillis() / 1000);

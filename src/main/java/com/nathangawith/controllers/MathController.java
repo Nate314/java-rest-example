@@ -1,5 +1,7 @@
 package com.nathangawith.controllers;
 
+import javax.servlet.http.HttpServletRequest;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
@@ -12,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.nathangawith.database.Database;
 import com.nathangawith.services.IMathService;
+import com.nathangawith.services.IOperationService;
 
 class MathRequest {
     public int a;
@@ -39,6 +42,16 @@ public class MathController {
     @Qualifier("math_service")
     private IMathService mathService;
 
+    @Autowired
+    @Qualifier("operation_service")
+    private IOperationService operationService;
+
+    @Autowired
+    private HttpServletRequest httpServletRequest;
+
+    private String currentUsername() {
+    	return (String) httpServletRequest.getAttribute("username");
+    }
 
     @RequestMapping(
     		value = "/add/{a}/{b}",
@@ -53,8 +66,10 @@ public class MathController {
     	System.out.println(t.col_string);
     	int intA = Integer.parseInt(a);
     	int intB = Integer.parseInt(b);
+    	int result = mathService.getAddition(intA, intB);
+    	operationService.logAddition(currentUsername(), intA, intB, result);
     	return new ResponseEntity<MathResult>(
-    			new MathResult(mathService.getAddition(intA, intB)),
+    			new MathResult(result),
     			HttpStatus.OK);
     }
 
@@ -66,12 +81,10 @@ public class MathController {
     public ResponseEntity<MathResult> postAddResult(
     		@RequestBody MathRequest request)
     throws Exception {
-        System.out.println("----------------");
-        System.out.println(mathService.getAddition(request.a, request.b));
-        System.out.println("----------------");
-        int asdf = mathService.getAddition(request.a, request.b);
+        int result = mathService.getAddition(request.a, request.b);
+        operationService.logAddition(currentUsername(), request.a, request.b, result);
     	return new ResponseEntity<MathResult>(
-    			new MathResult(asdf),
+    			new MathResult(result),
     			HttpStatus.OK);
     }
 }

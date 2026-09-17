@@ -18,5 +18,6 @@ test.describe('Swagger UI', () => {
     expect(paths).toContain('/math/add');
     expect(paths).toContain('/math/add/{a}/{b}');
     expect(paths).toContain('/auth/login');
+    expect(paths).toContain('/auth/register');
   });
 });

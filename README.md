@@ -20,6 +20,9 @@ docker compose up --build
 This builds the app in a `maven:3.6-jdk-8` stage, runs it on `eclipse-temurin:8-jre-alpine`, and starts a `mysql:5.7` service seeded from `db/init.sql`. Wait for both containers to report healthy/started, then the API is available at `http://localhost:8080`, e.g.:
 
 ```
+curl -X POST http://localhost:8080/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"username": "alice", "password": "pw123"}'
 curl -X POST http://localhost:8080/auth/login \
   -H "Content-Type: application/json" \
   -d '{"username": "alice", "password": "pw123"}'
@@ -30,7 +33,7 @@ Stop it with `docker compose down` (add `-v` to also drop the MySQL data volume)
 
 ## Browsing the database (phpMyAdmin)
 
-The compose stack also starts a `phpmyadmin/phpmyadmin` container wired to the `mysql` service. With the stack running, open `http://localhost:8082`, log in with server `mysql`, username `root`, password `root`, and browse the `testing` database (including the `testing_table` seeded from `db/init.sql`).
+The compose stack also starts a `phpmyadmin/phpmyadmin` container wired to the `mysql` service. With the stack running, open `http://localhost:8082`, log in with server `mysql`, username `root`, password `root`, and browse the `testing` database — including `users` (registered accounts, passwords stored as bcrypt hashes) and `math_operations` (an audit log of every addition, tied to the authenticated user who ran it).
 
 ## API docs (Swagger)
 
@@ -74,13 +77,25 @@ The most common HTTP status codes are returned when there is an error.
 ### Account Controller
 No authentication required
 ```
+/auth/register [POST] {"username": "...", "password": "..."}
+
+creates a new user (password stored as a bcrypt hash). 409 Conflict if the
+username is already taken, 400 Bad Request if either field is missing.
+
 /auth/login [POST] {"username": "...", "password": "..."}
 
-returns a JWT that can be used for MathController requests
+validates the username/password against the users table and, if correct,
+returns a JWT that can be used for MathController requests. 401 Unauthorized
+on an unknown username or wrong password.
 ```
 
 ### Math Controller
-requires JWT authentication
+requires JWT authentication. The token's `preferred_username` claim must
+belong to a user that still exists in the `users` table (checked on every
+request, not just at login) — the interceptor rejects the request with a
+500 if the user has since been removed. Every successful addition is logged
+to `math_operations` with the authenticated username, both operands, and the
+result.
 ```
 /math/add [POST] {"a": a, "b": b}
 

@@ -29,6 +29,11 @@ public class Database {
     	this.config = new Gson().fromJson(json, DBConfig.class);
     }
 
+	public Connection getConnection() throws Exception {
+		Class.forName("com.mysql.jdbc.Driver");
+		return DriverManager.getConnection(this.config.connectionURL, this.config.dbUser, this.config.dbPass);
+	}
+
 	public <T extends Object> T testSelect(Class<T> type) {
 		T test = null;
         try {
