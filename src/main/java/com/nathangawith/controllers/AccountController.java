@@ -2,7 +2,7 @@ package com.nathangawith.controllers;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
@@ -20,13 +20,16 @@ class LoginRequest {
 @RequestMapping("/auth")
 public class AccountController {
 
-    @RequestMapping(value = "/login/{username}/{password}",
-    		method = RequestMethod.GET
+    @RequestMapping(
+    		value = "/login",
+    		method = RequestMethod.POST,
+    		consumes = {"application/JSON"}
     )
-    public ResponseEntity<Object> getLogin(
-    		@PathVariable("username") String username,
-    		@PathVariable("password") String password
+    public ResponseEntity<Object> postLogin(
+    		@RequestBody LoginRequest request
     	) throws Exception {
+
+    	String username = request.username;
 
     	try {
     		int issued_at = (int) (System.currentTimeMillis() / 1000);

@@ -17,6 +17,6 @@ test.describe('Swagger UI', () => {
     const paths = Object.keys(doc.paths);
     expect(paths).toContain('/math/add');
     expect(paths).toContain('/math/add/{a}/{b}');
-    expect(paths).toContain('/auth/login/{username}/{password}');
+    expect(paths).toContain('/auth/login');
   });
 });

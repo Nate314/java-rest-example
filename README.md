@@ -20,11 +20,17 @@ docker compose up --build
 This builds the app in a `maven:3.6-jdk-8` stage, runs it on `eclipse-temurin:8-jre-alpine`, and starts a `mysql:5.7` service seeded from `db/init.sql`. Wait for both containers to report healthy/started, then the API is available at `http://localhost:8080`, e.g.:
 
 ```
-curl http://localhost:8080/auth/login/alice/pw123
+curl -X POST http://localhost:8080/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username": "alice", "password": "pw123"}'
 curl http://localhost:8080/math/add/3/4
 ```
 
 Stop it with `docker compose down` (add `-v` to also drop the MySQL data volume).
+
+## Browsing the database (phpMyAdmin)
+
+The compose stack also starts a `phpmyadmin/phpmyadmin` container wired to the `mysql` service. With the stack running, open `http://localhost:8082`, log in with server `mysql`, username `root`, password `root`, and browse the `testing` database (including the `testing_table` seeded from `db/init.sql`).
 
 ## API docs (Swagger)
 
@@ -68,7 +74,7 @@ The most common HTTP status codes are returned when there is an error.
 ### Account Controller
 No authentication required
 ```
-/auth/login/{username}/{password}
+/auth/login [POST] {"username": "...", "password": "..."}
 
 returns a JWT that can be used for MathController requests
 ```

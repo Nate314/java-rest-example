@@ -4,7 +4,9 @@ const JWT_PATTERN = /^[\w-]+\.[\w-]+\.[\w-]+$/;
 
 test.describe('Account controller', () => {
   test('login returns a JWT', async ({ request }) => {
-    const res = await request.get('/auth/login/alice/pw123');
+    const res = await request.post('/auth/login', {
+      data: { username: 'alice', password: 'pw123' },
+    });
     expect(res.status()).toBe(200);
     const token = await res.text();
     expect(token.replace(/^"|"$/g, '')).toMatch(JWT_PATTERN);
@@ -13,7 +15,9 @@ test.describe('Account controller', () => {
 
 test.describe('Math controller', () => {
   async function login(request: import('@playwright/test').APIRequestContext) {
-    const res = await request.get('/auth/login/alice/pw123');
+    const res = await request.post('/auth/login', {
+      data: { username: 'alice', password: 'pw123' },
+    });
     const raw = await res.text();
     return raw.replace(/^"|"$/g, '');
   }
