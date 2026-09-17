@@ -24,8 +24,8 @@ public class AccountController {
     		method = RequestMethod.GET
     )
     public ResponseEntity<Object> getLogin(
-    		@PathVariable String username,
-    		@PathVariable String password
+    		@PathVariable("username") String username,
+    		@PathVariable("password") String password
     	) throws Exception {
 
     	try {

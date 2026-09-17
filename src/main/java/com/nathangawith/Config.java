@@ -20,6 +20,14 @@ public class Config extends WebMvcConfigurerAdapter {
 
 	@Override
 	public void addInterceptors(InterceptorRegistry registry) {
-		registry.addInterceptor(jwtMiddleware);
+		registry.addInterceptor(jwtMiddleware)
+			.excludePathPatterns(
+				"/swagger-ui.html",
+				"/swagger-resources/**",
+				"/v2/api-docs",
+				"/webjars/**",
+				"/configuration/ui",
+				"/configuration/security"
+			);
 	}
 }

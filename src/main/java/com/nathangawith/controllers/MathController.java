@@ -45,8 +45,8 @@ public class MathController {
     		method = RequestMethod.GET
     )
     public ResponseEntity<MathResult> getAddResult(
-    		@PathVariable String a,
-    		@PathVariable String b)
+    		@PathVariable("a") String a,
+    		@PathVariable("b") String b)
     throws Exception {
     	TestDto t = new Database().testSelect(TestDto.class);
     	System.out.println("Hey");

@@ -26,6 +26,23 @@ curl http://localhost:8080/math/add/3/4
 
 Stop it with `docker compose down` (add `-v` to also drop the MySQL data volume).
 
+## API docs (Swagger)
+
+With the app running, interactive API docs are available at `http://localhost:8080/swagger-ui.html`, with the raw OpenAPI (Swagger 2.0) document at `http://localhost:8080/v2/api-docs`. Both endpoints are excluded from JWT auth so they're reachable without a token.
+
+## End-to-end tests (Playwright)
+
+The `e2e/` folder has [Playwright](https://playwright.dev) tests that exercise the running app over HTTP (login, the math endpoints, auth rejection) and render `swagger-ui.html` in a real browser to confirm the docs page actually works. They run against whatever `BASE_URL` you point them at, so start the app first (via Docker or `mvn spring-boot:run`), then:
+
+```
+cd e2e
+npm install
+npx playwright install chromium
+BASE_URL=http://localhost:8080 npx playwright test
+```
+
+(On Windows PowerShell: `$env:BASE_URL="http://localhost:8080"; npx playwright test`.) `BASE_URL` defaults to `http://localhost:8080` if unset.
+
 ## Run and Test (without Docker)
 
 To run the application type
