@@ -10,6 +10,14 @@ test.describe('Swagger UI', () => {
     await expect(page.getByText('math-controller')).toBeVisible();
   });
 
+  test('shows an Authorize button for attaching a bearer token', async ({ page }) => {
+    await page.goto('/swagger-ui.html');
+    const authorizeButton = page.getByRole('button', { name: 'Authorize' });
+    await expect(authorizeButton).toBeVisible();
+    // The lock icon that marks the button (and secured operations).
+    await expect(authorizeButton.locator('svg')).toBeVisible();
+  });
+
   test('exposes a valid OpenAPI document listing all endpoints', async ({ request }) => {
     const res = await request.get('/v2/api-docs');
     expect(res.status()).toBe(200);
@@ -19,5 +27,29 @@ test.describe('Swagger UI', () => {
     expect(paths).toContain('/math/add/{a}/{b}');
     expect(paths).toContain('/auth/login');
     expect(paths).toContain('/auth/register');
+  });
+
+  test('secures the math endpoints but not the public auth endpoints', async ({ request }) => {
+    const res = await request.get('/v2/api-docs');
+    expect(res.status()).toBe(200);
+    const doc = await res.json();
+
+    // A "Bearer" apiKey security definition backs the Authorize button.
+    expect(doc.securityDefinitions).toBeTruthy();
+    expect(doc.securityDefinitions.Bearer).toMatchObject({
+      type: 'apiKey',
+      name: 'Authorization',
+      in: 'header',
+    });
+
+    const mathGet = doc.paths['/math/add/{a}/{b}'].get;
+    const mathPost = doc.paths['/math/add'].post;
+    expect(mathGet.security).toEqual([{ Bearer: expect.any(Array) }]);
+    expect(mathPost.security).toEqual([{ Bearer: expect.any(Array) }]);
+
+    const login = doc.paths['/auth/login'].post;
+    const register = doc.paths['/auth/register'].post;
+    expect(login.security).toBeUndefined();
+    expect(register.security).toBeUndefined();
   });
 });

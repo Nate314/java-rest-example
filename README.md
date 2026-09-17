@@ -39,6 +39,14 @@ The compose stack also starts a `phpmyadmin/phpmyadmin` container wired to the `
 
 With the app running, interactive API docs are available at `http://localhost:8080/swagger-ui.html`, with the raw OpenAPI (Swagger 2.0) document at `http://localhost:8080/v2/api-docs`. Both endpoints are excluded from JWT auth so they're reachable without a token.
 
+The math endpoints (`/math/add` and `/math/add/{a}/{b}`) are marked as secured in the docs (you'll see a closed padlock icon next to them), and there's an **Authorize** button near the top of the page for attaching a token to "Try it out" requests:
+
+1. Use the `account-controller` section to `POST /auth/register`, then `POST /auth/login`, and copy the JWT string from the login response.
+2. Click **Authorize**.
+3. In the "Value" field, type `Bearer ` followed by the token, e.g. `Bearer eyJhbGciOi...` — the full string, including the literal word `Bearer` and the space, is required. Springfox only knows how to send this as a raw `Authorization` header value, and `JWTInterceptor` expects the header to start with `Bearer ` (it splits on that literal string), so pasting the token alone will not authenticate.
+4. Click **Authorize**, then **Close**.
+5. Expand `math-controller`, click **Try it out** on either math endpoint, fill in the parameters, and click **Execute** — Swagger UI now automatically attaches the `Authorization: Bearer <token>` header to the request, and requests to `/auth/login`/`/auth/register` are unaffected since they aren't marked as secured.
+
 ## End-to-end tests (Playwright)
 
 The `e2e/` folder has [Playwright](https://playwright.dev) tests that exercise the running app over HTTP (login, the math endpoints, auth rejection) and render `swagger-ui.html` in a real browser to confirm the docs page actually works. They run against whatever `BASE_URL` you point them at, so start the app first (via Docker or `mvn spring-boot:run`), then:
