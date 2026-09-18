@@ -1,5 +1,0 @@
-{
-	"connectionURL": "jdbc:mysql://mysql:3306/testing?useSSL=false&serverTimezone=UTC",
-	"dbUser": "root",
-	"dbPass": "root"
-}

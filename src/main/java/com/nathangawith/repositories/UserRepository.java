@@ -11,8 +11,14 @@ import com.nathangawith.database.Database;
 @Component("user_repository")
 public class UserRepository implements IUserRepository {
 
+    private final Database database;
+
+    public UserRepository(Database database) {
+        this.database = database;
+    }
+
     public boolean existsByUsername(String username) throws Exception {
-        try (Connection con = new Database().getConnection();
+        try (Connection con = database.getConnection();
              PreparedStatement stmt = con.prepareStatement("select username from users where username = ?")) {
             stmt.setString(1, username);
             try (ResultSet rs = stmt.executeQuery()) {
@@ -22,7 +28,7 @@ public class UserRepository implements IUserRepository {
     }
 
     public void insertUser(String username, String passwordHash) throws Exception {
-        try (Connection con = new Database().getConnection();
+        try (Connection con = database.getConnection();
              PreparedStatement stmt = con.prepareStatement("insert into users (username, password_hash) values (?, ?)")) {
             stmt.setString(1, username);
             stmt.setString(2, passwordHash);
@@ -31,7 +37,7 @@ public class UserRepository implements IUserRepository {
     }
 
     public String getPasswordHash(String username) throws Exception {
-        try (Connection con = new Database().getConnection();
+        try (Connection con = database.getConnection();
              PreparedStatement stmt = con.prepareStatement("select password_hash from users where username = ?")) {
             stmt.setString(1, username);
             try (ResultSet rs = stmt.executeQuery()) {

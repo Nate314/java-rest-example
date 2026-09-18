@@ -1,29 +1,29 @@
 # --- Build stage ---
-# The app is pinned to Java 1.8 / Spring Boot 1.3.1 (out of scope to upgrade),
-# so we build with a Maven image bundling JDK 8, not a newer JDK.
-FROM maven:3.6-jdk-8 AS build
+FROM maven:3.9-eclipse-temurin-17 AS build
 
 WORKDIR /build
 
 # Cache dependencies separately from source for faster rebuilds
 COPY pom.xml .
-COPY .mvn .mvn
-RUN mvn -B dependency:go-offline || true
+RUN mvn -B dependency:go-offline
 
 COPY src src
 RUN mvn -B package -DskipTests
 
 # --- Runtime stage ---
-FROM eclipse-temurin:8-jre-alpine
+FROM eclipse-temurin:17-jre-alpine
+
+# Run as an unprivileged user. Configuration (DB_*, JWT_SECRET) comes from
+# environment variables at run time; nothing secret is baked into the image.
+RUN addgroup -S app && adduser -S -G app -H -s /sbin/nologin app
 
 WORKDIR /app
+COPY --from=build --chown=app:app /build/target/*.jar ./app.jar
 
-# Default config.json used when the container is run without docker-compose
-# (docker-compose overrides this with config.docker.json so the app talks
-# to the "mysql" compose service instead of localhost).
-COPY config.json ./config.json
-COPY --from=build /build/target/*.war ./app.war
-
+USER app
 EXPOSE 8080
 
-ENTRYPOINT ["java", "-jar", "/app/app.war"]
+HEALTHCHECK --interval=15s --timeout=3s --start-period=30s --retries=5 \
+  CMD nc -z localhost 8080 || exit 1
+
+ENTRYPOINT ["java", "-jar", "/app/app.jar"]

@@ -1,7 +1,8 @@
 package com.nathangawith.controllers;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.nathangawith.OpenApiConfig;
 import com.nathangawith.database.Database;
 import com.nathangawith.services.IMathService;
 import com.nathangawith.services.IOperationService;
@@ -36,6 +38,7 @@ class TestDto {
 
 @RestController
 @RequestMapping("/math")
+@SecurityRequirement(name = OpenApiConfig.BEARER_SCHEME)
 public class MathController {
 
     @Autowired
@@ -45,6 +48,9 @@ public class MathController {
     @Autowired
     @Qualifier("operation_service")
     private IOperationService operationService;
+
+    @Autowired
+    private Database database;
 
     @Autowired
     private HttpServletRequest httpServletRequest;
@@ -61,9 +67,7 @@ public class MathController {
     		@PathVariable("a") String a,
     		@PathVariable("b") String b)
     throws Exception {
-    	TestDto t = new Database().testSelect(TestDto.class);
-    	System.out.println("Hey");
-    	System.out.println(t.col_string);
+    	database.testSelect(TestDto.class);
     	int intA = Integer.parseInt(a);
     	int intB = Integer.parseInt(b);
     	int result = mathService.getAddition(intA, intB);

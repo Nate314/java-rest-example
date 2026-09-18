@@ -10,6 +10,12 @@ import com.nathangawith.repositories.IUserRepository;
 @Component("user_service")
 public class UserService implements IUserService {
 
+    /**
+     * Hash checked when the username is unknown, so that unknown-user and
+     * wrong-password logins cost the same bcrypt work (no timing oracle).
+     */
+    private static final String DUMMY_HASH = BCrypt.hashpw("dummy-password-for-timing", BCrypt.gensalt());
+
     private IUserRepository repository;
 
     @Autowired
@@ -32,6 +38,7 @@ public class UserService implements IUserService {
     public boolean validateCredentials(String username, String password) throws Exception {
         String hash = this.repository.getPasswordHash(username);
         if (hash == null) {
+            BCrypt.checkpw(password, DUMMY_HASH);
             return false;
         }
         return BCrypt.checkpw(password, hash);
