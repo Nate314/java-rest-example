@@ -15,7 +15,7 @@ No local JDK/Maven/MySQL install required. From the repo root:
 docker compose up --build
 ```
 
-This builds the app with Maven on JDK 17, runs it on `eclipse-temurin:17-jre-alpine` as a non-root user with a read-only filesystem, and starts a `mysql:8.4` service seeded from `db/`. The API is then available at `http://localhost:8080`, e.g.:
+This builds the app with Maven on JDK 17, runs it on `eclipse-temurin:17-jre-alpine` as a non-root user with a read-only filesystem, and starts a `mysql:8.4` service seeded from `db/`. The API is then available at `http://localhost:8080` (or the port printed by `./run.sh`, see "Running side by side / port selection"), e.g.:
 
 ```
 curl -X POST http://localhost:8080/auth/register \
@@ -40,7 +40,7 @@ All configuration comes from environment variables. Nothing secret is committed 
 | `DB_USER`, `DB_PASSWORD` | app, mysql init | Credentials of the least-privilege app account. Required. No single quotes. |
 | `MYSQL_ROOT_PASSWORD` | mysql, phpMyAdmin login | MySQL root password. The app never uses it. |
 | `SWAGGER_ENABLED` | app | `true` (default) or `false` to disable Swagger UI and the OpenAPI document. |
-| `APP_PORT`, `PMA_PORT`, `MYSQL_PORT` | compose | Host ports (8080, 8082, 3306). MySQL and phpMyAdmin bind to `127.0.0.1` only. |
+| `APP_PORT`, `PMA_PORT`, `MYSQL_PORT` | compose | Host ports (defaults 8080, 8082, 3306; `run.sh` / `run.ps1` choose free ones). MySQL and phpMyAdmin bind to `127.0.0.1` only. |
 
 The app account is created by `db/99-app-user.sh` on first initialisation of the data volume and only has `SELECT` on `testing_table` and `SELECT, INSERT` on `users` and `math_operations`: no `DROP`, `UPDATE`, `DELETE` or access to other schemas. Changing `DB_PASSWORD` later requires `docker compose down -v` (or changing the password inside MySQL), because the account is only created once.
 
@@ -48,11 +48,33 @@ Running without Docker: start MySQL 8 with the schema in `db/01-schema.sql`, cre
 
 ## Browsing the database (phpMyAdmin)
 
-The compose stack also starts phpMyAdmin wired to the `mysql` service, bound to `http://localhost:8082` on the local machine only. There is no auto-login: log in with the app account (`DB_USER`/`DB_PASSWORD`, read only browsing of `users` and `math_operations`) or as `root` with `MYSQL_ROOT_PASSWORD` for administration. Registered passwords are stored as bcrypt hashes, and `math_operations` is an audit log of every addition tied to the authenticated user.
+The compose stack also starts phpMyAdmin wired to the `mysql` service, bound to `http://localhost:8082` (default, `PMA_PORT`) on the local machine only. There is no auto-login: log in with the app account (`DB_USER`/`DB_PASSWORD`, read only browsing of `users` and `math_operations`) or as `root` with `MYSQL_ROOT_PASSWORD` for administration. Registered passwords are stored as bcrypt hashes, and `math_operations` is an audit log of every addition tied to the authenticated user.
+
+## Running side by side / port selection
+
+Several projects default to host port 8080, so two of them cannot run at once with a plain `docker compose up`. Each of these repos ships a small launcher that picks free ports for you:
+
+```
+./run.sh          # macOS, Linux, Git Bash
+.un.ps1         # Windows PowerShell
+```
+
+What it does:
+
+1. If no `.env` exists it creates one (with a header comment saying it was generated). An existing `.env` is never overwritten: only the port variables (`APP_PORT`, `PMA_PORT`, `MYSQL_PORT`) are added or adjusted, and every other line and comment is kept.
+2. For each port it starts at the default (or the value already in `.env`) and picks the first port that is free on this machine, scanning upward. A port counts as busy if anything, Docker or a native process, accepts a TCP connection on 127.0.0.1 (the PowerShell launcher also tries to bind it). Ports already picked in the same run are skipped.
+3. If this project's stack is already running it leaves the ports alone and does not rebuild (rebuild with `./run.sh up --build -d`). If it is stopped, the ports in `.env` are re-checked and only busy ones are reassigned, so starting a second and third project back to back just works.
+4. Runs `docker compose up --build -d` and prints the URLs using the ports it chose, for example `App: http://localhost:8081`.
+
+Any arguments are passed straight to `docker compose` after the `.env` step, for example `./run.sh down`, `./run.sh logs -f` or `.un.ps1 ps`.
+
+Plain `docker compose up --build` still works exactly as before with the 8080 defaults (fine for a single project). `docker compose` has no pre-run hook, so only the launcher generates `.env`.
+
+To pin ports by hand, edit `.env` (see `.env.example`). To start over, run `./run.sh down` and delete `.env`; the next launcher run picks ports again. The launcher needs `docker compose` v2 and, on macOS and Linux, bash; it uses only POSIX tools (`sed`, `awk`, `grep`).
 
 ## API docs (Swagger)
 
-With the app running, interactive API docs are at `http://localhost:8080/swagger-ui.html` and the raw OpenAPI 3 document at `http://localhost:8080/v3/api-docs`. Both are excluded from JWT auth. Set `SWAGGER_ENABLED=false` to turn both off (recommended outside local demos).
+With the app running, interactive API docs are at `http://localhost:8080/swagger-ui.html` and the raw OpenAPI 3 document at `http://localhost:8080/v3/api-docs` (replace 8080 with your `APP_PORT` if the launcher moved it). Both are excluded from JWT auth. Set `SWAGGER_ENABLED=false` to turn both off (recommended outside local demos).
 
 The math endpoints are marked as secured (padlock icon). To call them from Swagger UI:
 
@@ -62,16 +84,16 @@ The math endpoints are marked as secured (padlock icon). To call them from Swagg
 
 ## End-to-end tests (Playwright)
 
-The `e2e/` folder has [Playwright](https://playwright.dev) tests that exercise the running app over HTTP (register, login, token lifetime, auth rejection, input validation, throttling, security headers) and drive Swagger UI in a real browser, including the Authorize flow. Start the app first, then:
+The `e2e/` folder has [Playwright](https://playwright.dev) tests that exercise the running app over HTTP (register, login, token lifetime, auth rejection, input validation, throttling, security headers) and drive Swagger UI in a real browser, including the Authorize flow. Start the app first, then set `BASE_URL` to the app URL printed by the launcher (it defaults to `http://localhost:8080`, which is only right if the app got port 8080):
 
 ```
 cd e2e
 npm install
 npx playwright install chromium
-BASE_URL=http://localhost:8080 npx playwright test
+BASE_URL=http://localhost:<APP_PORT> npx playwright test
 ```
 
-(On Windows PowerShell: `$env:BASE_URL="http://localhost:8080"; npx playwright test`.) The tests forge tokens with `JWT_SECRET`, which defaults to the compose dev default; export it if you changed it. The login throttle test needs the app to see a stable client address, which is true for a normal local run.
+(On Windows PowerShell: `$env:BASE_URL="http://localhost:<APP_PORT>"; npx playwright test`.) The tests forge tokens with `JWT_SECRET`, which defaults to the compose dev default; export it if you changed it. The login throttle test needs the app to see a stable client address, which is true for a normal local run.
 
 ## Endpoints
 
