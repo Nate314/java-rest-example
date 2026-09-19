@@ -56,7 +56,7 @@ Several projects default to host port 8080, so two of them cannot run at once wi
 
 ```
 ./run.sh          # macOS, Linux, Git Bash
-.un.ps1         # Windows PowerShell
+.\run.ps1         # Windows PowerShell
 ```
 
 What it does:
@@ -66,7 +66,7 @@ What it does:
 3. If this project's stack is already running it leaves the ports alone and does not rebuild (rebuild with `./run.sh up --build -d`). If it is stopped, the ports in `.env` are re-checked and only busy ones are reassigned, so starting a second and third project back to back just works.
 4. Runs `docker compose up --build -d` and prints the URLs using the ports it chose, for example `App: http://localhost:8081`.
 
-Any arguments are passed straight to `docker compose` after the `.env` step, for example `./run.sh down`, `./run.sh logs -f` or `.un.ps1 ps`.
+Any arguments are passed straight to `docker compose` after the `.env` step, for example `./run.sh down`, `./run.sh logs -f` or `.\run.ps1 ps`.
 
 Plain `docker compose up --build` still works exactly as before with the 8080 defaults (fine for a single project). `docker compose` has no pre-run hook, so only the launcher generates `.env`.
 
