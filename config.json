@@ -1,5 +1,0 @@
-{	
-	"connectionURL": "jdbc:mysql://localhost:3306/testing",
-	"dbUser": "root",
-	"dbPass": "root"
-}
