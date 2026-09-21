@@ -2,58 +2,62 @@ package com.nathangawith.database;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
-import java.sql.Statement;
-import java.util.Arrays;
-import java.util.List;
 
-import org.json.JSONArray;
 import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
 import com.google.gson.Gson;
 
-class DBConfig {
-	public String connectionURL = "jdbc:mysql://localhost:3306/testing";
-	public String dbUser = "root";
-	public String dbPass = "root";
-}
-
+/** Connection settings come from DB_URL, DB_USER and DB_PASSWORD. */
+@Component
 public class Database {
 
-	private final DBConfig config;
+	private static final Logger log = LoggerFactory.getLogger(Database.class);
 
-    public Database() throws Exception {
-    	List<String> jsonLines = Arrays.asList(FileIO.readFileLines("config.json"));
-    	String json = String.join("\n", jsonLines);
-    	this.config = new Gson().fromJson(json, DBConfig.class);
-    }
+	private final String url;
+	private final String user;
+	private final String password;
 
-	public <T extends Object> T testSelect(Class<T> type) {
-		T test = null;
-        try {
-            Class.forName("com.mysql.jdbc.Driver");
-            Connection con = DriverManager.getConnection(this.config.connectionURL, this.config.dbUser, this.config.dbPass);
-            Statement stmt = con.createStatement();
-            ResultSet rs = stmt.executeQuery("select * from testing_table");
-            JSONArray json = new JSONArray();
-            ResultSetMetaData rsmd = rs.getMetaData();
-            while(rs.next()) {
-                int numColumns = rsmd.getColumnCount();
-                JSONObject obj = new JSONObject();
-                for (int i=1; i<=numColumns; i++) {
-                    String column_name = rsmd.getColumnName(i);
-                    obj.put(column_name, rs.getObject(column_name));
-                }
-                json.put(obj);
-            }
-            System.out.println(json);
-            System.out.println(json.get(0));
-            test = new Gson().fromJson(json.get(0).toString(), type);
-            con.close();
-        } catch (Exception e) {
-            System.out.println(e);
-        }
-        return test;
-    }
+	public Database(
+			@Value("${app.db.url}") String url,
+			@Value("${app.db.user:}") String user,
+			@Value("${app.db.password:}") String password) {
+		if (user == null || user.isEmpty() || password == null || password.isEmpty()) {
+			throw new IllegalStateException("DB_USER and DB_PASSWORD environment variables are required.");
+		}
+		this.url = url;
+		this.user = user;
+		this.password = password;
+	}
+
+	public Connection getConnection() throws Exception {
+		return DriverManager.getConnection(this.url, this.user, this.password);
+	}
+
+	/** Maps the first row of testing_table onto the given type (null if unavailable). */
+	public <T> T testSelect(Class<T> type) {
+		try (Connection con = getConnection();
+				PreparedStatement stmt = con.prepareStatement("select * from testing_table limit 1");
+				ResultSet rs = stmt.executeQuery()) {
+			if (!rs.next()) {
+				return null;
+			}
+			ResultSetMetaData rsmd = rs.getMetaData();
+			JSONObject obj = new JSONObject();
+			for (int i = 1; i <= rsmd.getColumnCount(); i++) {
+				String columnName = rsmd.getColumnLabel(i);
+				obj.put(columnName, rs.getObject(i));
+			}
+			return new Gson().fromJson(obj.toString(), type);
+		} catch (Exception e) {
+			log.warn("testSelect failed: {}", e.getClass().getName());
+			return null;
+		}
+	}
 }

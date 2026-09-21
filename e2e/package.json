@@ -1,0 +1,14 @@
+{
+  "name": "java-rest-example-e2e",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.48.0",
+    "@types/jsonwebtoken": "^9.0.7",
+    "jsonwebtoken": "^9.0.2"
+  }
+}
