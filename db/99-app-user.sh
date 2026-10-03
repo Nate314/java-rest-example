@@ -8,7 +8,6 @@ set -euo pipefail
 
 mysql -uroot -p"${MYSQL_ROOT_PASSWORD}" <<SQL
 CREATE USER '${DB_USER}'@'%' IDENTIFIED BY '${DB_PASSWORD}';
-GRANT SELECT ON \`${MYSQL_DATABASE}\`.testing_table TO '${DB_USER}'@'%';
 GRANT SELECT, INSERT ON \`${MYSQL_DATABASE}\`.users TO '${DB_USER}'@'%';
 GRANT SELECT, INSERT ON \`${MYSQL_DATABASE}\`.math_operations TO '${DB_USER}'@'%';
 FLUSH PRIVILEGES;

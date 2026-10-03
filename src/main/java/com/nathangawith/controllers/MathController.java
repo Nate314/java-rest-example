@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.nathangawith.OpenApiConfig;
-import com.nathangawith.database.Database;
 import com.nathangawith.services.IMathService;
 import com.nathangawith.services.IOperationService;
 
@@ -28,12 +27,6 @@ class MathResult {
     public MathResult(int val) {
         this.value = val;
     }
-}
-
-class TestDto {
-	public String col_date;
-	public int col_int;
-	public String col_string;
 }
 
 @RestController
@@ -50,9 +43,6 @@ public class MathController {
     private IOperationService operationService;
 
     @Autowired
-    private Database database;
-
-    @Autowired
     private HttpServletRequest httpServletRequest;
 
     private String currentUsername() {
@@ -67,7 +57,6 @@ public class MathController {
     		@PathVariable("a") String a,
     		@PathVariable("b") String b)
     throws Exception {
-    	database.testSelect(TestDto.class);
     	int intA = Integer.parseInt(a);
     	int intB = Integer.parseInt(b);
     	int result = mathService.getAddition(intA, intB);

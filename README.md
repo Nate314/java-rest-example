@@ -42,7 +42,7 @@ All configuration comes from environment variables. Nothing secret is committed 
 | `SWAGGER_ENABLED` | app | `true` (default) or `false` to disable Swagger UI and the OpenAPI document. |
 | `APP_PORT`, `PMA_PORT`, `MYSQL_PORT` | compose | Host ports (defaults 8080, 8082, 3306; `run.sh` / `run.ps1` choose free ones). MySQL and phpMyAdmin bind to `127.0.0.1` only. |
 
-The app account is created by `db/99-app-user.sh` on first initialisation of the data volume and only has `SELECT` on `testing_table` and `SELECT, INSERT` on `users` and `math_operations`: no `DROP`, `UPDATE`, `DELETE` or access to other schemas. Changing `DB_PASSWORD` later requires `docker compose down -v` (or changing the password inside MySQL), because the account is only created once.
+The app account is created by `db/99-app-user.sh` on first initialisation of the data volume and only has `SELECT, INSERT` on `users` and `math_operations`: no `DROP`, `UPDATE`, `DELETE` or access to other schemas. Changing `DB_PASSWORD` later requires `docker compose down -v` (or changing the password inside MySQL), because the account is only created once.
 
 Running without Docker: start MySQL 8 with the schema in `db/01-schema.sql`, create a user, then `JWT_SECRET=... DB_USER=... DB_PASSWORD=... mvn spring-boot:run`.
 
