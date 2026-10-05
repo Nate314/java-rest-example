@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Swagger UI', () => {
-  test('renders the API docs in a real browser', async ({ page }) => {
+  test('renders the API docs in a real browser @smoke', async ({ page }) => {
     await page.goto('/swagger-ui.html');
     await expect(page).toHaveTitle(/Swagger UI/);
     await expect(page.locator('.info .title')).toHaveText(/Java REST API Example/);

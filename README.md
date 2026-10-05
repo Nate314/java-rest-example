@@ -95,9 +95,11 @@ BASE_URL=http://localhost:<APP_PORT> npx playwright test
 
 (On Windows PowerShell: `$env:BASE_URL="http://localhost:<APP_PORT>"; npx playwright test`.) The tests forge tokens with `JWT_SECRET`, which defaults to the compose dev default; export it if you changed it. The login throttle test needs the app to see a stable client address, which is true for a normal local run.
 
+Scripts (run from `e2e/`): `npm test` (all tests), `npm run test:headed`, `npm run test:smoke` (only tests tagged `@smoke`) and `npm run report` (opens the last HTML report). Every run writes an HTML report to `e2e/playwright-report/index.html`.
+
 ### Running the e2e tests in Docker
 
-Nothing but Docker is needed: the official Playwright image already contains Node and the browsers, so there is no `npm install` or `npx playwright install` on the host. The image tag has to match the `@playwright/test` version that `e2e/package-lock.json` resolves to (currently 1.63.0). Start the stack first and use the app URL the launcher printed as `BASE_URL` (8082 in the examples below, replace it with yours).
+Nothing but Docker is needed: the official Playwright image already contains Node and the browsers, so there is no `npm install` or `npx playwright install` on the host. The image tag has to match the `@playwright/test` version, which `e2e/package.json` pins exactly (currently 1.63.0). Start the stack first and use the app URL the launcher printed as `BASE_URL` (8082 in the examples below, replace it with yours).
 
 The named volume keeps the container's Linux `node_modules` apart from any `node_modules` on the host.
 
@@ -118,7 +120,7 @@ macOS and Linux: the Git Bash command without `MSYS_NO_PATHCONV=1`.
 - If you changed `JWT_SECRET`, pass it to the container too: `-e JWT_SECRET=...` (the tests forge tokens with it).
 - `--network host` lets the container reach the app at `localhost`. Linux supports it out of the box. Docker Desktop needs "Enable host networking" (Settings, Resources, Network, Docker Desktop 4.34 or newer).
 - Without host networking, drop `--network host` and use `-e BASE_URL=http://host.docker.internal:8082` instead (on Linux also add `--add-host=host.docker.internal:host-gateway`).
-- Results are written to `e2e/test-results` in the repository. On Linux those files are owned by root.
+- Results are written to `e2e/test-results` and the HTML report to `e2e/playwright-report` in the repository. On Linux those files are owned by root.
 - Verified on Windows with Docker Desktop 4.41: all 28 tests pass in the container, with and without host networking. macOS and Linux were not tested.
 
 ## Endpoints

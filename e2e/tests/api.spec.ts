@@ -22,7 +22,7 @@ async function login(request: APIRequestContext, username: string, password: str
 }
 
 test.describe('Account controller - register', () => {
-  test('registers a new user', async ({ request }) => {
+  test('registers a new user @smoke', async ({ request }) => {
     const res = await register(request, uniqueUsername('reg'), PW);
     expect(res.status()).toBe(201);
   });
@@ -69,7 +69,7 @@ test.describe('Account controller - register', () => {
 });
 
 test.describe('Account controller - login', () => {
-  test('logs in a registered user and returns a JWT', async ({ request }) => {
+  test('logs in a registered user and returns a JWT @smoke', async ({ request }) => {
     const username = uniqueUsername('login');
     await register(request, username, PW);
 
@@ -133,7 +133,7 @@ test.describe('Account controller - login', () => {
 });
 
 test.describe('Math controller', () => {
-  test('GET /math/add/{a}/{b} returns the correct sum with a valid token', async ({ request }) => {
+  test('GET /math/add/{a}/{b} returns the correct sum with a valid token @smoke', async ({ request }) => {
     const username = uniqueUsername('math-get');
     await register(request, username, PW);
     const token = await login(request, username, PW);
@@ -145,7 +145,7 @@ test.describe('Math controller', () => {
     expect(await res.json()).toEqual({ value: 7 });
   });
 
-  test('POST /math/add returns the correct sum with a valid token', async ({ request }) => {
+  test('POST /math/add returns the correct sum with a valid token @smoke', async ({ request }) => {
     const username = uniqueUsername('math-post');
     await register(request, username, PW);
     const token = await login(request, username, PW);
@@ -169,7 +169,7 @@ test.describe('Math controller', () => {
     expect(res.status()).toBe(400);
   });
 
-  test('rejects requests with no Authorization header', async ({ request }) => {
+  test('rejects requests with no Authorization header @smoke', async ({ request }) => {
     const res = await request.get('/math/add/1/1', { failOnStatusCode: false });
     expect(res.status()).toBe(401);
     expect(await res.json()).toEqual({ message: 'Unauthorized' });

@@ -4,10 +4,12 @@
   "version": "1.0.0",
   "scripts": {
     "test": "playwright test",
-    "test:headed": "playwright test --headed"
+    "test:headed": "playwright test --headed",
+    "test:smoke": "playwright test --grep @smoke",
+    "report": "playwright show-report"
   },
   "devDependencies": {
-    "@playwright/test": "^1.48.0",
+    "@playwright/test": "1.63.0",
     "@types/jsonwebtoken": "^9.0.7",
     "jsonwebtoken": "^9.0.2"
   }
