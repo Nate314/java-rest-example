@@ -16,3 +16,4 @@ docs
 docker-compose*.yml
 Dockerfile
 config*.json
+compose-launcher
