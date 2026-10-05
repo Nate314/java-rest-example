@@ -2,36 +2,64 @@
 # Picks free host ports into .env (created on first run), then runs docker compose.
 #   ./run.sh            docker compose up --build -d, then print the URLs
 #   ./run.sh <args>     docker compose <args> (for example: ./run.sh down)
+# Vendored from https://github.com/Nate314/compose-launcher. Do not edit this copy:
+# the per-project settings live in run.conf next to this file.
 set -eu
 cd "$(dirname "$0")"
 
-# Host port variables and their preferred defaults.
-PORTS="APP_PORT=8080 PMA_PORT=8082 MYSQL_PORT=3306"
+CONF=run.conf
+PORTS=""  # "VAR=default VAR=default ", in run.conf order
+URLS=""   # url lines, one per line, with {VAR} placeholders
+NOTES=""  # note lines, one per line: "KEY|KEY text"
 
-print_urls() {
-  echo "App:        http://localhost:$(port_of APP_PORT)"
-  echo "Swagger UI: http://localhost:$(port_of APP_PORT)/swagger-ui.html"
-  echo "phpMyAdmin: http://localhost:$(port_of PMA_PORT)"
-  echo "MySQL:      127.0.0.1:$(port_of MYSQL_PORT)"
+die() { echo "run.sh: $*" >&2; exit 1; }
+
+load_config() {
+  [ -f "$CONF" ] || die "$CONF not found next to run.sh"
+  while read -r kind rest || [ -n "$kind" ]; do
+    kind=${kind%$'\r'}
+    rest=${rest%$'\r'}
+    case $kind in
+      ''|'#'*) ;;
+      port)
+        var=${rest%% *}
+        default=${rest##* }
+        case $var in ''|*[!A-Za-z0-9_]*) die "$CONF: bad port variable name: $rest" ;; esac
+        case $default in ''|0*|*[!0-9]*) die "$CONF: bad default port: $rest" ;; esac
+        PORTS="$PORTS$var=$default "
+        ;;
+      url) URLS="$URLS$rest
+" ;;
+      note)
+        case ${rest%% *} in ''|*[!A-Za-z0-9_\|]*) die "$CONF: bad note keys: $rest" ;; esac
+        NOTES="$NOTES$rest
+" ;;
+      *) die "$CONF: unknown line: $kind $rest" ;;
+    esac
+  done < "$CONF"
+  [ -n "$PORTS" ] || die "$CONF: no port lines"
 }
 
-# ---- generic part (identical in every repo) ----
+# Busy means something accepts a TCP connection on 127.0.0.1 (run.ps1 uses the same rule).
 is_busy() { (exec 3<>"/dev/tcp/127.0.0.1/$1") 2>/dev/null; }
 
 env_get() { [ -f .env ] && sed -n "s/^$1=//p" .env | tail -n 1 | tr -d '\r' || true; }
 
 env_set() {
   if grep -q "^$1=" .env; then
-    awk -v k="$1" -v v="$2" 'BEGIN{FS=OFS="="} $1==k{print k "=" v; next} {print}' .env > .env.tmp && mv .env.tmp .env
+    awk -v BINMODE=3 -v k="$1" -v v="$2" 'BEGIN{FS=OFS="="} $1==k{print k "=" v; next} {print}' .env > .env.tmp && mv .env.tmp .env
   else
     [ -z "$(tail -c 1 .env)" ] || echo >> .env
     printf '%s=%s\n' "$1" "$2" >> .env
   fi
 }
 
+# A usable port value is a positive decimal number without leading zeros.
+valid_port() { case $1 in ''|0*|*[!0-9]*) return 1 ;; esac; }
+
 port_of() {
   p=$(env_get "$1")
-  if [ -z "$p" ]; then
+  if ! valid_port "$p"; then
     for spec in $PORTS; do [ "${spec%%=*}" = "$1" ] && p=${spec#*=}; done
   fi
   echo "$p"
@@ -45,8 +73,7 @@ choose_ports() {
   picked=" "
   for spec in $PORTS; do
     var=${spec%%=*}
-    port=$(env_get "$var")
-    case $port in ''|*[!0-9]*) port=${spec#*=} ;; esac
+    port=$(port_of "$var")
     start=$port
     while is_busy "$port" || case $picked in *" $port "*) true ;; *) false ;; esac; do
       port=$((port + 1))
@@ -57,6 +84,22 @@ choose_ports() {
   done
 }
 
+print_notes() {
+  printf '%s' "$NOTES" | while read -r keys text; do
+    if grep -Eq "^($keys)=" .env; then echo "$text"; fi
+  done
+}
+
+print_urls() {
+  text=$URLS
+  for spec in $PORTS; do
+    placeholder="{${spec%%=*}}"
+    text=${text//$placeholder/$(port_of "${spec%%=*}")}
+  done
+  printf '%s' "$text"
+}
+
+load_config
 BUILD=--build
 if [ -n "$(docker compose ps --status running -q)" ]; then
   echo "Stack already running: leaving ports unchanged and skipping the rebuild."
@@ -64,6 +107,7 @@ if [ -n "$(docker compose ps --status running -q)" ]; then
   BUILD=
 else
   choose_ports
+  print_notes
 fi
 
 if [ $# -gt 0 ]; then
