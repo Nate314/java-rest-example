@@ -42,7 +42,17 @@ All configuration comes from environment variables. Nothing secret is committed 
 | `SWAGGER_ENABLED` | app | `true` (default) or `false` to disable Swagger UI and the OpenAPI document. |
 | `APP_PORT`, `PMA_PORT`, `MYSQL_PORT` | compose | Host ports (defaults 8080, 8082, 3306; `run.sh` / `run.ps1` choose free ones). MySQL and phpMyAdmin bind to `127.0.0.1` only. |
 
-The app account is created by `db/99-app-user.sh` on first initialisation of the data volume and only has `SELECT, INSERT` on `users` and `math_operations`: no `DROP`, `UPDATE`, `DELETE` or access to other schemas. Changing `DB_PASSWORD` later requires `docker compose down -v` (or changing the password inside MySQL), because the account is only created once.
+The app account is created by `db/99-app-user.sh` on first initialisation of the data volume and only has `SELECT, INSERT` on `users` and `math_operations`: no `DROP`, `UPDATE`, `DELETE` or access to other schemas. Because the account is only created once, changing `DB_PASSWORD` in `.env` later has no effect on MySQL by itself.
+
+#### Rotating `DB_PASSWORD`
+
+To keep the data, with the stack running:
+
+1. `docker compose exec mysql mysql -uroot -p` (enter `MYSQL_ROOT_PASSWORD`), then run `ALTER USER 'app'@'%' IDENTIFIED BY '<new password>';` (use your `DB_USER` if it is not `app`).
+2. Set `DB_PASSWORD=<new password>` in `.env`.
+3. `docker compose up -d` (or `./run.sh up -d`) to recreate the app with the new value.
+
+To throw the data away instead, change `.env` and run `docker compose down -v` before starting again.
 
 Running without Docker: start MySQL 8 with the schema in `db/01-schema.sql`, create a user, then `JWT_SECRET=... DB_USER=... DB_PASSWORD=... mvn spring-boot:run`.
 
@@ -114,10 +124,12 @@ docker run --rm --ipc=host --network host -v "${PWD}:/repo" -v jre-e2e-node-modu
 Git Bash (`MSYS_NO_PATHCONV=1` stops Git Bash from rewriting the `/repo` paths into Windows paths):
 
 ```bash
-MSYS_NO_PATHCONV=1 docker run --rm --ipc=host --network host -v "$PWD:/repo" -v jre-e2e-node-modules:/repo/e2e/node_modules -w /repo/e2e -e BASE_URL=http://localhost:8082 mcr.microsoft.com/playwright:v1.63.0-noble sh -c "npm ci && npx playwright test"
+MSYS_NO_PATHCONV=1 docker run --rm --ipc=host --network host -v "$(pwd -W):/repo" -v jre-e2e-node-modules:/repo/e2e/node_modules -w /repo/e2e -e BASE_URL=http://localhost:8082 mcr.microsoft.com/playwright:v1.63.0-noble sh -c "npm ci && npx playwright test"
 ```
 
-macOS and Linux: the Git Bash command without `MSYS_NO_PATHCONV=1`.
+`$(pwd -W)` gives the Windows form of the path. With plain `$PWD` (`/c/Users/...`) Docker Desktop mounts an empty folder and the run fails with "No tests found".
+
+macOS and Linux: the Git Bash command without `MSYS_NO_PATHCONV=1` and with `$PWD` instead of `$(pwd -W)`.
 
 - If you changed `JWT_SECRET`, pass it to the container too: `-e JWT_SECRET=...` (the tests forge tokens with it).
 - `--network host` lets the container reach the app at `localhost`. Linux supports it out of the box. Docker Desktop needs "Enable host networking" (Settings, Resources, Network, Docker Desktop 4.34 or newer).
