@@ -1,6 +1,6 @@
 # Java REST API Example
 
-This repository includes a basic REST API built with Spring Boot 3 (Java 17), MySQL 8.4 and auth0 java-jwt.
+This repository includes a basic REST API built with Spring Boot 4 (Java 17), MySQL 8.4 and auth0 java-jwt.
 
 I used these resources heavily to create this demo Java REST api:
 - https://github.com/cagataygurturk/java-rest-example
@@ -162,7 +162,7 @@ Both return {"value": a + b}. Non-numeric path operands return 400.
 
 Summary of what is hardened and what is deliberately left as a follow-up.
 
-- **Dependencies:** Spring Boot 3.5.x (Spring Framework 6, Tomcat 10.1, Jackson) with Boot managed versions bumped in `pom.xml` where a newer patched release exists, `mysql-connector-j`, current `org.json`, `gson` and `java-jwt` 4.x. Swagger moved from springfox (unmaintained, Boot 2.5 max) to springdoc-openapi.
+- **Dependencies:** Spring Boot 4.2.x (Spring Framework 7, Tomcat 11, Jackson 3) with every version managed by Boot except the few libraries Boot does not manage, `mysql-connector-j`, current `org.json`, `gson` and `java-jwt` 4.x. Swagger moved from springfox (unmaintained, Boot 2.5 max) to springdoc-openapi.
 - **JWT:** secret from `JWT_SECRET` (min 32 chars, fail fast), one `JwtService` owns signing and verification, HS256 only, issuer checked, 15 minute lifetime (`exp - iat = 900`).
 - **Auth errors:** 401 JSON responses, no logging of headers, tokens or URLs. Public routes are matched by exact path, not URL substring.
 - **Database:** app uses a least-privilege account, all SQL uses `PreparedStatement`, credentials come from the environment.
