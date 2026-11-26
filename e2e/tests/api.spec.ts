@@ -1,8 +1,16 @@
 import { test, expect, APIRequestContext } from '@playwright/test';
 import jwt from 'jsonwebtoken';
+import fs from 'fs';
+import path from 'path';
 
-// Must match the JWT_SECRET the app was started with (docker-compose dev default).
-const JWT_SECRET = process.env.JWT_SECRET || 'dev-only-jwt-secret-change-me-0123456789';
+// Must match the JWT_SECRET the app was started with: the environment, then the git-ignored
+// .env the launcher writes, then the docker-compose.yml dev default.
+function dotEnv(name: string): string | undefined {
+  const file = path.resolve(__dirname, '..', '..', '.env');
+  if (!fs.existsSync(file)) return undefined;
+  return new RegExp(`^${name}=([^\r\n]*)`, 'm').exec(fs.readFileSync(file, 'utf8'))?.[1];
+}
+const JWT_SECRET = process.env.JWT_SECRET || dotEnv('JWT_SECRET') || 'dev-only-jwt-secret-change-me-0123456789';
 const ISSUER = 'java-rest-example';
 const PW = 'pw12345678';
 const JWT_PATTERN = /^[\w-]+\.[\w-]+\.[\w-]+$/;

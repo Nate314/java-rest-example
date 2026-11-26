@@ -44,6 +44,8 @@ All configuration comes from environment variables. Nothing secret is committed 
 
 The app account is created by `db/99-app-user.sh` on first initialisation of the data volume and only has `SELECT, INSERT` on `users` and `math_operations`: no `DROP`, `UPDATE`, `DELETE` or access to other schemas. Because the account is only created once, changing `DB_PASSWORD` in `.env` later has no effect on MySQL by itself.
 
+`./run.sh` and `.\run.ps1` fill a new `.env` with random values for `MYSQL_ROOT_PASSWORD`, `DB_PASSWORD` and `JWT_SECRET` (the `secret` lines in `run.conf`). The two database passwords are skipped while the `mysql-data` volume exists, because MySQL keeps the passwords it was initialised with: the launcher prints a note and the stack keeps using them. Rotate them as below, or run `./run.sh down -v` and delete `.env` to start over with new ones.
+
 #### Rotating `DB_PASSWORD`
 
 To keep the data, with the stack running:
@@ -105,7 +107,7 @@ npx playwright install chromium
 BASE_URL=http://localhost:<APP_PORT> npx playwright test
 ```
 
-(On Windows PowerShell: `$env:BASE_URL="http://localhost:<APP_PORT>"; npx playwright test`.) The tests forge tokens with `JWT_SECRET`, which defaults to the compose dev default; export it if you changed it. The login throttle test needs the app to see a stable client address, which is true for a normal local run.
+(On Windows PowerShell: `$env:BASE_URL="http://localhost:<APP_PORT>"; npx playwright test`.) The tests forge tokens with `JWT_SECRET`. They read it from the environment, then from the repository's `.env` (where the launcher writes a random one), then fall back to the compose dev default. The login throttle test needs the app to see a stable client address, which is true for a normal local run.
 
 Scripts (run from `e2e/`): `npm test` (all tests), `npm run test:headed`, `npm run test:smoke` (only tests tagged `@smoke`) and `npm run report` (opens the last HTML report). Every run writes an HTML report to `e2e/playwright-report/index.html`.
 
@@ -131,7 +133,7 @@ MSYS_NO_PATHCONV=1 docker run --rm --ipc=host --network host -v "$(pwd -W):/repo
 
 macOS and Linux: the Git Bash command without `MSYS_NO_PATHCONV=1` and with `$PWD` instead of `$(pwd -W)`.
 
-- If you changed `JWT_SECRET`, pass it to the container too: `-e JWT_SECRET=...` (the tests forge tokens with it).
+- The tests read `JWT_SECRET` from the mounted repository's `.env`, so a launcher-generated secret needs nothing extra. If the app was started with a different value, pass it with `-e JWT_SECRET=...`.
 - `--network host` lets the container reach the app at `localhost`. Linux supports it out of the box. Docker Desktop needs "Enable host networking" (Settings, Resources, Network, Docker Desktop 4.34 or newer).
 - Without host networking, drop `--network host` and use `-e BASE_URL=http://host.docker.internal:8082` instead (on Linux also add `--add-host=host.docker.internal:host-gateway`).
 - Results are written to `e2e/test-results` and the HTML report to `e2e/playwright-report` in the repository. On Linux those files are owned by root.
